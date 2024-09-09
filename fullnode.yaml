@@ -1,0 +1,34 @@
+
+node:
+  id: "my-node-id"
+  network: "mainnet"
+  rpc:
+    enabled: true
+    port: 6969
+    cors: "*"
+    apis: ["lucid", "node", "net", "txpool", "node", "telemetry"]
+  p2p:
+    listen_port: 42069
+    min_peers: 20
+    max_peers: 50
+    grace_period: 20
+    discovery: true
+  data:
+    dir: "database/blockchain"
+  logging:
+    level: "info" # debug, info, warn, error
+    file: "log/blockchain/node.log"
+  sync:
+    mode: "fast" # full, fast, light
+  mining:
+    enabled: false
+    miner_url: "http://localhost:8008"
+  genesis:
+    file: "chaincfg/genesis.json"
+  peers:
+    -
+  debug:
+    enabled: true
+    seed: 0
+    port: 8007
+    peer: "/ip4/127.0.0.1/tcp/8007/p2p/12D3KooWL8nQRdxPCXCHs3AaPqA1SEBKViQLMkeSbzqYegQv22QJ"
