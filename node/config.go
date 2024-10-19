@@ -1,9 +1,18 @@
 package node
 
+type NodeType string
+
+const (
+	FullNode NodeType = "full"
+	BootNode NodeType = "boot"
+	DevNode  NodeType = "dev"
+)
+
 type FullNodeConfig struct {
 	Node struct {
-		Id      string `yaml:"id"`
-		Network string `yaml:"network"`
+		Id      string   `yaml:"id"`
+		Type    NodeType `yaml:"type"`
+		Network string   `yaml:"network"`
 		Rpc     struct {
 			Enabled bool     `yaml:"enabled"`
 			Port    int      `yaml:"port"`

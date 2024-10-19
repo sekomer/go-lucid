@@ -1,6 +1,7 @@
 
 node:
   id: "my-node-id"
+  type: "boot" # full, boot, dev
   network: "mainnet"
   rpc:
     enabled: true

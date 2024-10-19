@@ -1,2 +1,1 @@
-go run main.go node start
-# todo: use debug fullnode.yaml
+go run main.go --config config/fullnode.yaml node start 

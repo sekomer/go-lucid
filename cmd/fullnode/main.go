@@ -59,7 +59,13 @@ func StartRpcClient(client host.Host) *gorpc.Client {
 
 func main(c *node.FullNodeConfig) {
 	log.Println("normal node starting...")
-	port := c.Node.P2p.ListenPort
+
+	var port int
+	if c.Node.Debug.Enabled {
+		port = rand.Int()%1000 + 10000
+	} else {
+		port = c.Node.P2p.ListenPort
+	}
 
 	var initialPeers []string
 	initialPeers = append(initialPeers, c.Node.Peers...)
@@ -71,10 +77,7 @@ func main(c *node.FullNodeConfig) {
 
 	log.Println("initial peers:", initialPeers)
 
-	var err error
-	var priv crypto.PrivKey
-
-	priv, _, err = crypto.GenerateEd25519Key(rand.New(rand.NewSource(rand.Uint64())))
+	priv, _, err := crypto.GenerateEd25519Key(rand.New(rand.NewSource(rand.Uint64())))
 	if err != nil {
 		panic(err)
 	}
@@ -82,8 +85,8 @@ func main(c *node.FullNodeConfig) {
 	var idht *dht.IpfsDHT
 
 	connmgr, err := connmgr.NewConnManager(
-		c.Node.P2p.MinPeers, // Lowwater
-		c.Node.P2p.MaxPeers, // HighWater,
+		c.Node.P2p.MinPeers,
+		c.Node.P2p.MaxPeers,
 		connmgr.WithGracePeriod(time.Duration(c.Node.P2p.GracePeriod)*time.Second),
 	)
 	if err != nil {
@@ -111,16 +114,11 @@ func main(c *node.FullNodeConfig) {
 		libp2p.NATPortMap(),
 		// Let this host use the DHT to find other hosts
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-			idht, err = dht.New(context.Background(), h, dht.Mode(dht.ModeServer))
+			idht, err = dht.New(context.Background(), h, dht.Mode(dht.ModeAutoServer))
 			return idht, err
 		}),
-		// If you want to help other peers to figure out if they are behind
-		// NATs, you can launch the server-side of AutoNAT too (AutoRelay
-		// already runs the client)
-		//
-		// This service is highly rate-limited and should not cause any
-		// performance issues.
 		libp2p.EnableNATService(),
+		libp2p.EnableAutoNATv2(),
 	)
 
 	if err != nil {
@@ -128,7 +126,7 @@ func main(c *node.FullNodeConfig) {
 	}
 	defer h2.Close()
 
-	go StartRpcServer(h2)
+	// go StartRpcServer(h2)
 
 	ps, err := pubsub.NewGossipSub(context.Background(), h2)
 	if err != nil {
@@ -163,7 +161,8 @@ func main(c *node.FullNodeConfig) {
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
 		for range ticker.C {
-			err := th.Publish(context.Background(), []byte("Hello World"))
+			data := []byte(fmt.Sprintf("hello world from %s", h2.ID()))
+			err := th.Publish(context.Background(), data)
 			if err != nil {
 				fmt.Println("[ Broadcast Error ]", err)
 			}
@@ -189,7 +188,7 @@ func main(c *node.FullNodeConfig) {
 				fmt.Println("[ Read Error ]", err)
 			}
 			fmt.Println("[ Message From ]", msg.ReceivedFrom)
-			fmt.Println("[ Read Topic ]", string(msg.Data))
+			fmt.Println("[Cow Meat]", string(msg.Data))
 			fmt.Print('\n')
 		}
 	}()
@@ -217,7 +216,7 @@ func main(c *node.FullNodeConfig) {
 
 			fmt.Print("\n\n")
 
-			idht.RefreshRoutingTable()
+			// idht.RefreshRoutingTable()
 		}
 	}()
 
@@ -255,33 +254,33 @@ func main(c *node.FullNodeConfig) {
 		// log.Println("!!!!!!!!!!!!!ping handler")
 	})
 
-	rpcClient := StartRpcClient(h2)
+	// rpcClient := StartRpcClient(h2)
 
-	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		for range ticker.C {
-			peers := h2.Network().Peers()
-			if len(peers) < 1 {
-				continue
-			}
+	// go func() {
+	// 	ticker := time.NewTicker(5 * time.Second)
+	// 	for range ticker.C {
+	// 		peers := h2.Network().Peers()
+	// 		if len(peers) < 1 {
+	// 			continue
+	// 		}
 
-			peer := peers[rand.Intn(len(peers))]
+	// 		peer := peers[rand.Intn(len(peers))]
 
-			var reply PingReply
-			var args PingArgs
+	// 		var reply PingReply
+	// 		var args PingArgs
 
-			b := make([]byte, 32)
-			_, err := rand.Read(b)
-			if err != nil {
-				panic(err)
-			}
+	// 		b := make([]byte, 32)
+	// 		_, err := rand.Read(b)
+	// 		if err != nil {
+	// 			panic(err)
+	// 		}
 
-			args.Data = b
+	// 		args.Data = b
 
-			rpcClient.Call(peer, "PingService", "Ping", args, &reply)
-			fmt.Println("rpc call reply:", reply.Data)
-		}
-	}()
+	// 		rpcClient.Call(peer, "PingService", "Ping", args, &reply)
+	// 		fmt.Println("rpc call reply:", reply.Data)
+	// 	}
+	// }()
 
 	select {}
 }

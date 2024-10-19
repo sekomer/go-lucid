@@ -9,6 +9,7 @@ import (
 )
 
 type RpcApi struct {
+	Name          string
 	ProtocolId    protocol.ID
 	Version       string
 	Service       interface{}

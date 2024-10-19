@@ -3,22 +3,28 @@ package main
 import (
 	"fmt"
 	bootnode "go-lucid/cmd/bootnode"
+	devnode "go-lucid/cmd/devnode"
 	fullnode "go-lucid/cmd/fullnode"
 	"go-lucid/node"
 	"io"
 	"log"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/rand"
 	"gopkg.in/yaml.v3"
 )
 
 func main() {
+	rand.Seed(uint64(time.Now().UnixNano()))
+
 	log.Default().SetFlags(log.LstdFlags | log.Lshortfile)
 
 	var yamlFile string
 	var boot bool
+	var dev bool
 
 	cli.VersionFlag = &cli.BoolFlag{
 		Name:    "version-flag",
@@ -44,7 +50,7 @@ func main() {
 				Name:        "config",
 				Aliases:     []string{"c"},
 				TakesFile:   true,
-				Value:       "fullnode.yaml",
+				Value:       "config/fullnode.yaml",
 				Usage:       "Load configuration from `FILE`",
 				Destination: &yamlFile,
 			},
@@ -75,6 +81,12 @@ func main() {
 								Value:       false,
 								Destination: &boot,
 							},
+							&cli.BoolFlag{
+								Name:        "dev",
+								Usage:       "start the dev",
+								Value:       false,
+								Destination: &dev,
+							},
 						},
 						Action: func(*cli.Context) error {
 							log.Println("yamlFile:", yamlFile)
@@ -98,6 +110,8 @@ func main() {
 
 							if boot {
 								bootnode.Start(c)
+							} else if dev {
+								devnode.Start(c)
 							} else {
 								fullnode.Start(c)
 							}

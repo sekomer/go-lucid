@@ -6,7 +6,6 @@ import (
 	"go-lucid/rpc"
 	"go-lucid/rpc/ping"
 	"log"
-	"os"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
@@ -14,17 +13,20 @@ import (
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-libp2p/core/routing"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
+	"golang.org/x/exp/rand"
 )
 
 type Node struct {
-	Host host.Host
-	Rpc  rpc.RpcServer
+	Host   host.Host
+	Dht    *dht.IpfsDHT
+	Rpc    rpc.RpcServer
+	config *FullNodeConfig
 }
 
 func (n *Node) RegisterRpcServices() {
@@ -40,18 +42,33 @@ func (n *Node) RegisterRpcServices() {
 }
 
 func (n *Node) CreateHost(priv crypto.PrivKey, c *FullNodeConfig) {
-	var port int
+	n.config = c
+
+	if priv == nil {
+		var err error
+		priv, _, err = crypto.GenerateEd25519Key(rand.New(rand.NewSource(rand.Uint64())))
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	var idht *dht.IpfsDHT
 
-	if c.Node.Debug.Enabled {
+	var port int
+	switch c.Node.Type {
+	default:
+		panic("unknown node type")
+	case DevNode:
+		port = rand.Int()%1000 + 10000
+	case BootNode:
 		port = c.Node.Debug.Port
-	} else {
+	case FullNode:
 		port = c.Node.P2p.ListenPort
 	}
 
 	connmgr, err := connmgr.NewConnManager(
-		c.Node.P2p.MinPeers, // Lowwater
-		c.Node.P2p.MaxPeers, // HighWater,
+		c.Node.P2p.MinPeers,
+		c.Node.P2p.MaxPeers,
 		connmgr.WithGracePeriod(time.Duration(c.Node.P2p.GracePeriod)*time.Second),
 	)
 	if err != nil {
@@ -59,27 +76,18 @@ func (n *Node) CreateHost(priv crypto.PrivKey, c *FullNodeConfig) {
 	}
 
 	h2, err := libp2p.New(
-		// Use the keypair we generated
 		libp2p.Identity(priv),
-		// Multiple listen addresses
 		libp2p.ListenAddrStrings(
-			fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", port),      // regular tcp connections
-			fmt.Sprintf("/ip4/0.0.0.0/udp/%d/quic", port), // a UDP endpoint for the QUIC transport
+			fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", port),
+			fmt.Sprintf("/ip4/0.0.0.0/udp/%d/quic", port),
 		),
-		// support TLS connections
 		libp2p.Security(libp2ptls.ID, libp2ptls.New),
-		// support noise connection
 		libp2p.Security(noise.ID, noise.New),
-		// support any other default transports (TCP)
 		libp2p.DefaultTransports,
-		// Let's prevent our peer from having too many
-		// connections by attaching a connection manager.
 		libp2p.ConnectionManager(connmgr),
-		// Attempt to open ports using uPNP for NATed hosts.
 		libp2p.NATPortMap(),
-		// Let this host use the DHT to find other hosts
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-			idht, err = dht.New(context.Background(), h, dht.Mode(dht.ModeServer))
+			idht, err = dht.New(context.Background(), h, dht.Mode(dht.ModeAutoServer))
 			return idht, err
 		}),
 		libp2p.EnableNATService(),
@@ -87,9 +95,9 @@ func (n *Node) CreateHost(priv crypto.PrivKey, c *FullNodeConfig) {
 	if err != nil {
 		panic(err)
 	}
-	if true || os.Getenv("RESOURCE_DEBUG") == "true" {
-		go resourceDebug(idht)
-		go peerstoreDebug(h2, idht)
+
+	if n.config.Node.Debug.Enabled {
+		// go peerstoreDebug(h2)
 	}
 
 	n.Host = h2
@@ -107,31 +115,33 @@ func (n *Node) StartPingRpc(protocolId protocol.ID, server *ping.PingService) {
 	}
 }
 
-func resourceDebug(idht *dht.IpfsDHT) {
+func peerstoreDebug(host host.Host) {
 	ticker := time.NewTicker(5 * time.Second)
-	for range ticker.C {
-		idht.Host().Network().ResourceManager().ViewSystem(func(rs network.ResourceScope) error {
-			log.Println("memory:", rs.Stat().Memory)
-			log.Println("cons in:", rs.Stat().NumConnsInbound)
-			log.Println("cons out:", rs.Stat().NumConnsOutbound)
-			log.Println("strm in:", rs.Stat().NumStreamsInbound)
-			log.Println("strm out:", rs.Stat().NumStreamsOutbound)
-			log.Println("fds:", rs.Stat().NumFD)
-			return nil
-		})
-	}
-}
-
-func peerstoreDebug(host host.Host, idht *dht.IpfsDHT) {
-	ticker := time.NewTicker(5 * time.Second)
-
 	for range ticker.C {
 		pxr := host.Peerstore().PeersWithAddrs()
 		log.Println("peerstore len:", pxr.Len())
 		peers := host.Network().Peers()
 		log.Println("active peers:", len(peers))
 		fmt.Print("\n\n")
+	}
+}
 
-		idht.RefreshRoutingTable()
+func (n *Node) InitPeers() {
+	if n.config.Node.Type == "boot" {
+		return
+	}
+
+	initialPeers := n.config.Node.Peers
+	if n.config.Node.Debug.Enabled {
+		initialPeers = []string{n.config.Node.Debug.Peer}
+	}
+
+	for _, p := range initialPeers {
+		addrInfo, _ := peer.AddrInfoFromString(p)
+		err := n.Host.Connect(context.Background(), *addrInfo)
+		if err != nil {
+			// TODO: handle gracefully
+			panic(err)
+		}
 	}
 }

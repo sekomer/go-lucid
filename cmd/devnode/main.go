@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"go-lucid/node"
 	"log"
@@ -9,12 +10,10 @@ import (
 
 	gorpc "github.com/libp2p/go-libp2p-gorpc"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
-	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
+	ping "github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	"golang.org/x/exp/rand"
 )
 
@@ -26,7 +25,6 @@ type PingArgs struct {
 type PingReply struct {
 	Data []byte
 }
-
 type PingService struct{}
 
 func (t *PingService) Ping(ctx context.Context, argType PingArgs, replyType *PingReply) error {
@@ -50,23 +48,14 @@ func StartRpcClient(client host.Host) *gorpc.Client {
 }
 
 func main(c *node.FullNodeConfig) {
-	log.Println("bootnode starting...")
-
-	var initialPeers []string = make([]string, 0)
-
-	var err error
-	var priv crypto.PrivKey
-
-	priv, _, err = crypto.GenerateEd25519Key(rand.New(rand.NewSource(c.Node.Debug.Seed)))
-	if err != nil {
-		panic(err)
-	}
+	log.Println("dev node starting...")
 
 	var node node.Node
-	node.CreateHost(priv, c)
+	node.CreateHost(nil, c)
+	node.InitPeers()
 	defer node.Close()
 
-	// go StartRpcServer(node.Host)
+	go StartRpcServer(node.Host)
 
 	ps, err := pubsub.NewGossipSub(context.Background(), node.Host)
 	if err != nil {
@@ -78,14 +67,21 @@ func main(c *node.FullNodeConfig) {
 		panic(err)
 	}
 
+	log.Printf("connection address of this node is: %s/p2p/%s\n", node.Host.Addrs()[0], node.Host.ID())
+
 	// broadcast into topic every 5 seconds
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
 		for range ticker.C {
-			data := []byte(fmt.Sprintf("hello world from %s", node.Host.ID()))
+			msg := struct {
+				Message string
+			}{
+				Message: "Hello, World!",
+			}
+			data, _ := json.Marshal(msg)
 			err := th.Publish(context.Background(), data)
 			if err != nil {
-				log.Println("Broadcast Error:", err)
+				fmt.Println("[ Broadcast Error ]", err)
 			}
 		}
 	}()
@@ -99,27 +95,22 @@ func main(c *node.FullNodeConfig) {
 	go func() {
 		for {
 			msg, err := thSub.Next(context.Background())
+
+			// skip self message
 			if msg.ReceivedFrom == node.Host.ID() {
 				continue
 			}
-			if err != nil {
-				log.Println("Read Error:", err)
-			}
 
-			log.Println("Message From", msg.ReceivedFrom)
-			log.Println("[Cow Meat]", string(msg.Data))
+			if err != nil {
+				fmt.Println("[ Read Error ]", err)
+			}
+			fmt.Println("[ Message From ]", msg.ReceivedFrom)
+			x := string(msg.Data)
+
+			fmt.Println("[ COW MEAT ]", x)
 			fmt.Print('\n')
 		}
 	}()
-
-	// connect to the initial peers
-	for _, p := range initialPeers {
-		addrInfo, _ := peer.AddrInfoFromString(p)
-		err = node.Host.Connect(context.Background(), *addrInfo)
-		if err != nil {
-			panic(err)
-		}
-	}
 
 	log.Printf("Hello World, hosts ID is %s\n", node.Host.ID())
 	log.Printf("connection address of this node is: %s/p2p/%s\n", node.Host.Addrs()[0], node.Host.ID())
@@ -128,30 +119,30 @@ func main(c *node.FullNodeConfig) {
 	pingService := &ping.PingService{Host: node.Host}
 	node.Host.SetStreamHandler(ping.ID, pingService.PingHandler)
 
-	go func() {
-		ticker := time.NewTicker(1 * time.Second)
+	// go func() {
+	// 	ticker := time.NewTicker(1 * time.Second)
 
-		for range ticker.C {
-			peers := node.Host.Network().Peers()
-			if len(peers) > 0 {
-				peer := peers[rand.Intn(len(peers))]
+	// 	for range ticker.C {
+	// 		peers := node.Host.Network().Peers()
+	// 		if len(peers) > 0 {
+	// 			peer := peers[rand.Intn(len(peers))]
 
-				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 
-				ch := pingService.Ping(ctx, peer)
-				<-ch
+	// 			ch := pingService.Ping(ctx, peer)
+	// 			<-ch
 
-				// timeout
-				if ctx.Err() == context.DeadlineExceeded {
-					log.Printf("ping %s timeout\n", peer)
-				} else {
-					// log.Printf("ping %s success\n", peer)
-				}
+	// 			// timeout
+	// 			if ctx.Err() == context.DeadlineExceeded {
+	// 				log.Printf("ping %s timeout\n", peer)
+	// 			} else {
+	// 				log.Printf("ping %s success\n", peer)
+	// 			}
 
-				cancel()
-			}
-		}
-	}()
+	// 			cancel()
+	// 		}
+	// 	}
+	// }()
 
 	node.Host.SetStreamHandler(ping.ID, func(s network.Stream) {
 		defer s.Close()
@@ -181,8 +172,11 @@ func main(c *node.FullNodeConfig) {
 
 			args.Data = b
 
-			rpcClient.Call(peer, "PingService", "Ping", args, &reply)
-			log.Println("rpc call reply:", string(reply.Data))
+			err = rpcClient.Call(peer, "PingService", "Ping", args, &reply)
+			if err != nil {
+				fmt.Println("rpc call error:", err)
+			}
+			fmt.Println("rpc call reply:", reply.Data)
 		}
 	}()
 
