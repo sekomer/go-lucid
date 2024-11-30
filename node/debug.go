@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -19,5 +20,16 @@ func (n *Node) ResourceDebug() {
 			log.Println("fds:", rs.Stat().NumFD)
 			return nil
 		})
+	}
+}
+
+func (n *Node) PeerstoreDebug() {
+	ticker := time.NewTicker(5 * time.Second)
+	for range ticker.C {
+		pxr := n.Host.Peerstore().PeersWithAddrs()
+		log.Println("peerstore len:", pxr.Len())
+		peers := n.Host.Network().Peers()
+		log.Println("active peers:", len(peers))
+		fmt.Print("\n\n")
 	}
 }

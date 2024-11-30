@@ -4,17 +4,14 @@ import (
 	"context"
 	"fmt"
 	"go-lucid/rpc"
-	"go-lucid/rpc/ping"
 	"log"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
-	gorpc "github.com/libp2p/go-libp2p-gorpc"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-libp2p/core/routing"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
@@ -25,23 +22,12 @@ import (
 type Node struct {
 	Host   host.Host
 	Dht    *dht.IpfsDHT
-	Rpc    rpc.RpcServer
+	Rpc    *rpc.RpcServer
 	config *FullNodeConfig
 }
 
-func (n *Node) RegisterRpcServices() {
-	for _, api := range n.Rpc.Api {
-		rpcHost := gorpc.NewServer(n.Host, api.ProtocolId)
-		err := rpcHost.Register(api.Service)
-		if err != nil {
-			panic(err)
-		}
-
-		n.Rpc.Log.Printf("Registered service %s", api.ProtocolId)
-	}
-}
-
-func (n *Node) CreateHost(priv crypto.PrivKey, c *FullNodeConfig) {
+func CreateHost(priv crypto.PrivKey, c *FullNodeConfig) *Node {
+	n := &Node{}
 	n.config = c
 
 	if priv == nil {
@@ -101,29 +87,12 @@ func (n *Node) CreateHost(priv crypto.PrivKey, c *FullNodeConfig) {
 	}
 
 	n.Host = h2
+	n.Rpc = rpc.NewRpcServer(h2, log.Default())
+	return n
 }
 
 func (n *Node) Close() {
 	n.Host.Close()
-}
-
-func (n *Node) StartPingRpc(protocolId protocol.ID, server *ping.PingService) {
-	rpcHost := gorpc.NewServer(n.Host, protocolId)
-	err := rpcHost.Register(server)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func peerstoreDebug(host host.Host) {
-	ticker := time.NewTicker(5 * time.Second)
-	for range ticker.C {
-		pxr := host.Peerstore().PeersWithAddrs()
-		log.Println("peerstore len:", pxr.Len())
-		peers := host.Network().Peers()
-		log.Println("active peers:", len(peers))
-		fmt.Print("\n\n")
-	}
 }
 
 func (n *Node) InitPeers() {
@@ -135,7 +104,6 @@ func (n *Node) InitPeers() {
 	if n.config.Node.Debug.Enabled {
 		initialPeers = []string{n.config.Node.Debug.Peer}
 	}
-
 	for _, p := range initialPeers {
 		addrInfo, _ := peer.AddrInfoFromString(p)
 		err := n.Host.Connect(context.Background(), *addrInfo)

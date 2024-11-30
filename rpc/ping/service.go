@@ -4,34 +4,26 @@ import (
 	"context"
 	"go-lucid/rpc"
 
-	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/core/host"
 )
 
-type RpcArgs struct {
-	Data []byte
+type PingService struct {
+	rpc.BaseService
 }
 
-type RpcReply struct {
-	Data []byte
-}
-
-type PingService struct{}
-
-func (t *PingService) Ping(ctx context.Context, argType RpcArgs, replyType *RpcReply) error {
-	replyType.Data = argType.Data
-	return nil
-}
-
-func CreatePingService() rpc.RpcApi {
-	svc := PingService{}
-
-	pingApi := rpc.RpcApi{
-		ProtocolId:    protocol.ID("/p2p/rpc/ping"),
-		Version:       "1.0",
-		Service:       &svc,
-		Public:        true,
-		Authenticated: false,
+func NewPingService(host host.Host) *PingService {
+	return &PingService{
+		BaseService: *rpc.NewBaseService(
+			host,
+			ServiceName,
+			ProtocolID,
+			Version,
+		),
 	}
+}
 
-	return pingApi
+// Define the RPC method
+func (s *PingService) Ping(ctx context.Context, args *PingArgs, reply *PingReply) error {
+	reply.Data = args.Data
+	return nil
 }

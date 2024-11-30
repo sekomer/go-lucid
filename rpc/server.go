@@ -4,39 +4,29 @@ import (
 	"log"
 
 	gorpc "github.com/libp2p/go-libp2p-gorpc"
-	host "github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
-type RpcApi struct {
-	Name          string
-	ProtocolId    protocol.ID
-	Version       string
-	Service       interface{}
-	Public        bool
-	Authenticated bool
-}
-
 type RpcServer struct {
-	Endpoint   string
-	Api        []RpcApi
-	Log        *log.Logger
-	AppVersion string
+	host   host.Host
+	logger *log.Logger
 }
 
-func NewRpcServer(endpoint string, log *log.Logger, appVersion string) *RpcServer {
+// todo: maybe move this under host
+func NewRpcServer(host host.Host, logger *log.Logger) *RpcServer {
 	return &RpcServer{
-		Endpoint:   endpoint,
-		Api:        []RpcApi{},
-		Log:        log,
-		AppVersion: appVersion,
+		host:   host,
+		logger: logger,
 	}
 }
 
-func (s *RpcServer) AddApi(api RpcApi) {
-	s.Api = append(s.Api, api)
-}
-
-func StartRpcClient(host *host.Host, protocolId protocol.ID) *gorpc.Client {
-	return gorpc.NewClient(*host, protocolId)
+func (s *RpcServer) RegisterService(service interface{}, protocolID protocol.ID) error {
+	rpcHost := gorpc.NewServer(s.host, protocolID)
+	err := rpcHost.Register(service)
+	if err != nil {
+		return err
+	}
+	s.logger.Printf("Registered RPC service: %s\n", protocolID)
+	return nil
 }

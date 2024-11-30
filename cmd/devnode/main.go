@@ -2,46 +2,21 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"go-lucid/core"
 	"go-lucid/node"
+	transaction "go-lucid/p2p/transaction"
+	"go-lucid/rpc/ping"
+	"go-lucid/service/health"
 	"log"
 	"time"
 
 	gorpc "github.com/libp2p/go-libp2p-gorpc"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/protocol"
-	ping "github.com/libp2p/go-libp2p/p2p/protocol/ping"
-	"golang.org/x/exp/rand"
 )
 
 var rpcProtocolID = protocol.ID("/p2p/rpc/ping")
-
-type PingArgs struct {
-	Data []byte
-}
-type PingReply struct {
-	Data []byte
-}
-type PingService struct{}
-
-func (t *PingService) Ping(ctx context.Context, argType PingArgs, replyType *PingReply) error {
-	log.Println("Received a Ping call")
-	replyType.Data = argType.Data
-	return nil
-}
-
-func StartRpcServer(host host.Host) {
-	rpcHost := gorpc.NewServer(host, rpcProtocolID)
-
-	svc := PingService{}
-	err := rpcHost.Register(&svc)
-	if err != nil {
-		panic(err)
-	}
-}
 
 func StartRpcClient(client host.Host) *gorpc.Client {
 	return gorpc.NewClient(client, rpcProtocolID)
@@ -50,133 +25,57 @@ func StartRpcClient(client host.Host) *gorpc.Client {
 func main(c *node.FullNodeConfig) {
 	log.Println("dev node starting...")
 
-	var node node.Node
-	node.CreateHost(nil, c)
-	node.InitPeers()
-	defer node.Close()
+	n := node.CreateHost(nil, c)
+	n.InitPeers()
+	defer n.Close()
 
-	go StartRpcServer(node.Host)
+	log.Printf("Hello World, hosts ID is %s\n", n.Host.ID())
+	log.Printf("connection address of this node is: %s/p2p/%s\n", n.Host.Addrs()[0], n.Host.ID())
 
-	ps, err := pubsub.NewGossipSub(context.Background(), node.Host)
+	pingService := ping.NewPingService(n.Host)
+	err := n.Rpc.RegisterService(pingService, ping.ProtocolID)
 	if err != nil {
 		panic(err)
 	}
 
-	th, err := ps.Join("test")
-	if err != nil {
-		panic(err)
-	}
-
-	log.Printf("connection address of this node is: %s/p2p/%s\n", node.Host.Addrs()[0], node.Host.ID())
-
-	// broadcast into topic every 5 seconds
+	healthService := health.NewHealthService(n.Host)
 	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		for range ticker.C {
-			msg := struct {
-				Message string
-			}{
-				Message: "Hello, World!",
-			}
-			data, _ := json.Marshal(msg)
-			err := th.Publish(context.Background(), data)
-			if err != nil {
-				fmt.Println("[ Broadcast Error ]", err)
-			}
+		err := healthService.Start(context.Background())
+		if err != nil {
+			log.Println("error starting health service:", err)
 		}
 	}()
 
-	thSub, err := th.Subscribe()
+	ps, err := pubsub.NewGossipSub(context.Background(), n.Host)
 	if err != nil {
 		panic(err)
 	}
-
-	// read from topic
+	transactionService, err := transaction.NewTransactionService(n.Host, ps)
+	if err != nil {
+		panic(err)
+	}
+	ch, err := transactionService.Subscribe(context.Background())
+	if err != nil {
+		panic(err)
+	}
 	go func() {
-		for {
-			msg, err := thSub.Next(context.Background())
-
-			// skip self message
-			if msg.ReceivedFrom == node.Host.ID() {
-				continue
-			}
-
+		for range time.Tick(1 * time.Second) {
+			log.Println("broadcasting block... devnode")
+			err := transactionService.Broadcast(context.Background(), core.RawTransaction{Version: 32})
 			if err != nil {
-				fmt.Println("[ Read Error ]", err)
+				log.Println("error broadcasting block:", err)
 			}
-			fmt.Println("[ Message From ]", msg.ReceivedFrom)
-			x := string(msg.Data)
-
-			fmt.Println("[ COW MEAT ]", x)
-			fmt.Print('\n')
 		}
 	}()
-
-	log.Printf("Hello World, hosts ID is %s\n", node.Host.ID())
-	log.Printf("connection address of this node is: %s/p2p/%s\n", node.Host.Addrs()[0], node.Host.ID())
-
-	// ping
-	pingService := &ping.PingService{Host: node.Host}
-	node.Host.SetStreamHandler(ping.ID, pingService.PingHandler)
-
-	// go func() {
-	// 	ticker := time.NewTicker(1 * time.Second)
-
-	// 	for range ticker.C {
-	// 		peers := node.Host.Network().Peers()
-	// 		if len(peers) > 0 {
-	// 			peer := peers[rand.Intn(len(peers))]
-
-	// 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-
-	// 			ch := pingService.Ping(ctx, peer)
-	// 			<-ch
-
-	// 			// timeout
-	// 			if ctx.Err() == context.DeadlineExceeded {
-	// 				log.Printf("ping %s timeout\n", peer)
-	// 			} else {
-	// 				log.Printf("ping %s success\n", peer)
-	// 			}
-
-	// 			cancel()
-	// 		}
-	// 	}
-	// }()
-
-	node.Host.SetStreamHandler(ping.ID, func(s network.Stream) {
-		defer s.Close()
-		// log.Println("!!!!!!!!!!!!!ping handler")
-	})
-
-	rpcClient := StartRpcClient(node.Host)
-
 	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		for range ticker.C {
-			peers := node.Host.Network().Peers()
-			if len(peers) < 1 {
+		for msg := range ch {
+			tx := core.RawTransaction{}
+			err := tx.Deserialize(msg.Payload)
+			if err != nil {
+				log.Println("error deserializing block:", err)
 				continue
 			}
-
-			peer := peers[rand.Intn(len(peers))]
-
-			var reply PingReply
-			var args PingArgs
-
-			b := make([]byte, 32)
-			_, err := rand.Read(b)
-			if err != nil {
-				panic(err)
-			}
-
-			args.Data = b
-
-			err = rpcClient.Call(peer, "PingService", "Ping", args, &reply)
-			if err != nil {
-				fmt.Println("rpc call error:", err)
-			}
-			fmt.Println("rpc call reply:", reply.Data)
+			log.Printf("from: %s, block: %+v\n", msg.From, tx)
 		}
 	}()
 

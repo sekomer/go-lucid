@@ -10,7 +10,7 @@ func serializeTxIn(buf *bytes.Buffer, tx *RawTransaction) error {
 	if err != nil {
 		return err
 	}
-	for _, in := range tx.TxIn {
+	for _, in := range tx.TxIns {
 		err = binary.Write(buf, binary.LittleEndian, in.Coinbase)
 		if err != nil {
 			return err
@@ -45,7 +45,7 @@ func serializeTxOut(buf *bytes.Buffer, tx *RawTransaction) error {
 	if err != nil {
 		return err
 	}
-	for _, out := range tx.TxOut {
+	for _, out := range tx.TxOuts {
 		err = binary.Write(buf, binary.LittleEndian, out.Value)
 		if err != nil {
 			return err
@@ -91,30 +91,30 @@ func deserializeTxIn(buf *bytes.Buffer, tx *RawTransaction) error {
 	if err != nil {
 		return err
 	}
-	tx.TxIn = make([]TxIn, tx.TxInCount)
+	tx.TxIns = make([]TxIn, tx.TxInCount)
 	for i := 0; i < int(tx.TxInCount); i++ {
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxIn[i].Coinbase)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxIns[i].Coinbase)
 		if err != nil {
 			return err
 		}
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxIn[i].PreviousOutput.Hash)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxIns[i].PreviousOutput.Hash)
 		if err != nil {
 			return err
 		}
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxIn[i].PreviousOutput.Index)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxIns[i].PreviousOutput.Index)
 		if err != nil {
 			return err
 		}
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxIn[i].ScriptLength)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxIns[i].ScriptLength)
 		if err != nil {
 			return err
 		}
-		tx.TxIn[i].SignatureScript = make([]byte, tx.TxIn[i].ScriptLength)
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxIn[i].SignatureScript)
+		tx.TxIns[i].SignatureScript = make([]byte, tx.TxIns[i].ScriptLength)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxIns[i].SignatureScript)
 		if err != nil {
 			return err
 		}
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxIn[i].Sequence)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxIns[i].Sequence)
 		if err != nil {
 			return err
 		}
@@ -128,18 +128,18 @@ func deserializeTxOut(buf *bytes.Buffer, tx *RawTransaction) error {
 	if err != nil {
 		return err
 	}
-	tx.TxOut = make([]TxOut, tx.TxOutCount)
+	tx.TxOuts = make([]TxOut, tx.TxOutCount)
 	for i := 0; i < int(tx.TxOutCount); i++ {
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxOut[i].Value)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxOuts[i].Value)
 		if err != nil {
 			return err
 		}
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxOut[i].ScriptLength)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxOuts[i].ScriptLength)
 		if err != nil {
 			return err
 		}
-		tx.TxOut[i].PkScript = make([]byte, tx.TxOut[i].ScriptLength)
-		err = binary.Read(buf, binary.LittleEndian, &tx.TxOut[i].PkScript)
+		tx.TxOuts[i].PkScript = make([]byte, tx.TxOuts[i].ScriptLength)
+		err = binary.Read(buf, binary.LittleEndian, &tx.TxOuts[i].PkScript)
 		if err != nil {
 			return err
 		}
@@ -148,26 +148,25 @@ func deserializeTxOut(buf *bytes.Buffer, tx *RawTransaction) error {
 	return nil
 }
 
-func Deserialize(data []byte) (*RawTransaction, error) {
+func (tx *RawTransaction) Deserialize(data []byte) error {
 	buf := bytes.NewBuffer(data)
-	tx := &RawTransaction{}
 
 	err := binary.Read(buf, binary.LittleEndian, &tx.Version)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	err = deserializeTxIn(buf, tx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	err = deserializeTxOut(buf, tx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	err = binary.Read(buf, binary.LittleEndian, &tx.LockTime)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return tx, nil
+	return nil
 }

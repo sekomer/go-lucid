@@ -16,11 +16,11 @@ func TestHelloName(t *testing.T) {
 	tx := RawTransaction{
 		Version:   1,
 		TxInCount: 1,
-		TxIn: []TxIn{
+		TxIns: []TxIn{
 			{
 				Coinbase: true,
 				PreviousOutput: OutPoint{
-					Hash:  Hash{0x01, 0x02, 0x03, 0x04},
+					Hash:  []byte{0x01, 0x02, 0x03, 0x04},
 					Index: 0,
 				},
 				Sequence:        0,
@@ -29,7 +29,7 @@ func TestHelloName(t *testing.T) {
 			},
 		},
 		TxOutCount: 1,
-		TxOut: []TxOut{
+		TxOuts: []TxOut{
 			{
 				Value:        100000000,
 				ScriptLength: uint32(len(genScript)),
@@ -49,7 +49,8 @@ func TestHelloName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deserTx, err := Deserialize(ser)
+	deserTx := &RawTransaction{}
+	err = deserTx.Deserialize(ser)
 	if err != nil {
 		t.Fatal(err)
 	}
