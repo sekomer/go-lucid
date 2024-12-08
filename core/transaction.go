@@ -7,7 +7,7 @@ type Lumen uint64
 const OneLumen = Lumen(1e8)
 
 type OutPoint struct {
-	Hash  []byte `gorm:"index"` // Use string for compatibility with database fields
+	Hash  []byte `gorm:"index"`
 	Index uint32
 }
 
@@ -34,8 +34,8 @@ type RawTransaction struct {
 	Hash       []byte `gorm:"index"`
 	Version    int32
 	TxInCount  uint32
+	TxIns      []TxIn `gorm:"foreignKey:TransactionID"` // One-to-Many relationship
 	TxOutCount uint32
-	TxIns      []TxIn  `gorm:"foreignKey:TransactionID"` // One-to-Many relationship
 	TxOuts     []TxOut `gorm:"foreignKey:TransactionID"` // One-to-Many relationship
 	LockTime   int64
 }

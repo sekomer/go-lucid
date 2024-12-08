@@ -1,12 +1,17 @@
-[*] tx and block design
-[ ] design & decide script opcodes
-[ ] embedded database impl.
-[ ] decide on genesis block
-[ ] signing and validating transactions
-[ ] pow algorithm impl.
-[ ] consensus impl.
-[ ] logger impl.
-[ ] p2p and node impl.
-[ ] mempool
-[ ] synchronization
-[ ] modular miner impl.
+🚧 = in progress
+⌛ = not started
+✅ = done
+❌ = cancelled
+
+[🚧] tx and block design
+[⌛] design & decide script opcodes
+[🚧] embedded database impl.
+[⌛] decide on genesis block
+[⌛] signing and validating transactions
+[⌛] pow algorithm impl.
+[⌛] consensus impl.
+[⌛] logger impl.
+[🚧] p2p and node impl.
+[⌛] mempool
+[⌛] synchronization
+[⌛] modular miner impl.

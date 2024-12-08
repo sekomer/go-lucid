@@ -66,7 +66,11 @@ func serializeTxOut(buf *bytes.Buffer, tx *RawTransaction) error {
 func (tx *RawTransaction) Serialize() ([]byte, error) {
 	var buf bytes.Buffer
 
-	err := binary.Write(&buf, binary.LittleEndian, tx.Version)
+	err := binary.Write(&buf, binary.LittleEndian, tx.Hash)
+	if err != nil {
+		return nil, err
+	}
+	err = binary.Write(&buf, binary.LittleEndian, tx.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +101,7 @@ func deserializeTxIn(buf *bytes.Buffer, tx *RawTransaction) error {
 		if err != nil {
 			return err
 		}
+		tx.TxIns[i].PreviousOutput.Hash = make([]byte, HASH_LEN)
 		err = binary.Read(buf, binary.LittleEndian, &tx.TxIns[i].PreviousOutput.Hash)
 		if err != nil {
 			return err
@@ -151,7 +156,12 @@ func deserializeTxOut(buf *bytes.Buffer, tx *RawTransaction) error {
 func (tx *RawTransaction) Deserialize(data []byte) error {
 	buf := bytes.NewBuffer(data)
 
-	err := binary.Read(buf, binary.LittleEndian, &tx.Version)
+	tx.Hash = make([]byte, HASH_LEN)
+	err := binary.Read(buf, binary.LittleEndian, &tx.Hash)
+	if err != nil {
+		return err
+	}
+	err = binary.Read(buf, binary.LittleEndian, &tx.Version)
 	if err != nil {
 		return err
 	}

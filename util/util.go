@@ -2,7 +2,7 @@ package util
 
 import (
 	"crypto/rand"
-	m "math/rand"
+	mrand "math/rand"
 )
 
 // GenerateRandomBytes returns a random byte array of the specified size
@@ -17,5 +17,5 @@ func GenerateRandomBytes(size int) []byte {
 
 // RandRange returns a random integer between min and max
 func RandRange(min, max int) int {
-	return m.Intn(max-min) + min
+	return mrand.Intn(max-min) + min
 }
