@@ -2,7 +2,7 @@ package p2p
 
 import (
 	"context"
-	"go-lucid/core"
+	"go-lucid/core/block"
 	"go-lucid/p2p"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -25,7 +25,7 @@ func NewBlockService(h host.Host, ps *pubsub.PubSub) (*BlockService, error) {
 	}, nil
 }
 
-func (s *BlockService) Broadcast(ctx context.Context, block core.Block) error {
+func (s *BlockService) Broadcast(ctx context.Context, block block.Block) error {
 	data, err := block.Serialize()
 	if err != nil {
 		return err

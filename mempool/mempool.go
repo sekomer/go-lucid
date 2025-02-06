@@ -1,7 +1,7 @@
 package mempool
 
 import (
-	"go-lucid/core"
+	"go-lucid/core/transaction"
 	"sync"
 )
 
@@ -12,19 +12,25 @@ var (
 
 type Mempool struct {
 	sync.RWMutex
-	txs map[string]*core.RawTransaction
+	txs map[string]*transaction.RawTransaction
 }
 
 func GetMempool() *Mempool {
 	once.Do(func() {
 		instance = &Mempool{
-			txs: make(map[string]*core.RawTransaction),
+			txs: make(map[string]*transaction.RawTransaction),
 		}
 	})
 	return instance
 }
 
-func (m *Mempool) AddTx(tx *core.RawTransaction) error {
+func GetTestMempool() *Mempool {
+	return &Mempool{
+		txs: make(map[string]*transaction.RawTransaction),
+	}
+}
+
+func (m *Mempool) AddTx(tx *transaction.RawTransaction) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -39,18 +45,18 @@ func (m *Mempool) RemoveTx(hash string) {
 	delete(m.txs, hash)
 }
 
-func (m *Mempool) GetTx(hash string) *core.RawTransaction {
+func (m *Mempool) GetTx(hash string) *transaction.RawTransaction {
 	m.RLock()
 	defer m.RUnlock()
 
 	return m.txs[hash]
 }
 
-func (m *Mempool) GetTxs() []*core.RawTransaction {
+func (m *Mempool) GetTxs() []*transaction.RawTransaction {
 	m.RLock()
 	defer m.RUnlock()
 
-	txs := make([]*core.RawTransaction, 0, len(m.txs))
+	txs := make([]*transaction.RawTransaction, 0, len(m.txs))
 	for _, tx := range m.txs {
 		txs = append(txs, tx)
 	}
@@ -69,5 +75,5 @@ func (m *Mempool) Clear() {
 	m.Lock()
 	defer m.Unlock()
 
-	m.txs = make(map[string]*core.RawTransaction)
+	m.txs = make(map[string]*transaction.RawTransaction)
 }

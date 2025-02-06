@@ -22,3 +22,11 @@ func GetDB(path string) *gorm.DB {
 	})
 	return db
 }
+
+func GetTestDB() *gorm.DB {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+	return db
+}

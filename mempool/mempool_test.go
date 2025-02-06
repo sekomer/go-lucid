@@ -1,7 +1,7 @@
 package mempool_test
 
 import (
-	"go-lucid/core"
+	"go-lucid/core/transaction"
 	"go-lucid/mempool"
 	"go-lucid/util"
 	"testing"
@@ -10,10 +10,12 @@ import (
 )
 
 func TestMempoolSize(t *testing.T) {
-	mempool := mempool.GetMempool()
+	t.Parallel()
+
+	mempool := mempool.GetTestMempool()
 
 	for i := 0; i < 100; i++ {
-		tx := &core.RawTransaction{}
+		tx := &transaction.RawTransaction{}
 		tx.Hash = util.GenerateRandomBytes(32)
 		mempool.AddTx(tx)
 	}
@@ -24,10 +26,12 @@ func TestMempoolSize(t *testing.T) {
 }
 
 func TestMempoolAddRemove(t *testing.T) {
-	mempool := mempool.GetMempool()
+	t.Parallel()
+
+	mempool := mempool.GetTestMempool()
 
 	txHash := util.GenerateRandomBytes(32)
-	tx := &core.RawTransaction{Hash: txHash}
+	tx := &transaction.RawTransaction{Hash: txHash}
 
 	mempool.AddTx(tx)
 	assert.Equal(t, mempool.Size(), int32(1))
@@ -39,10 +43,12 @@ func TestMempoolAddRemove(t *testing.T) {
 }
 
 func TestMempoolGetTx(t *testing.T) {
-	mempool := mempool.GetMempool()
+	t.Parallel()
+
+	mempool := mempool.GetTestMempool()
 
 	txHash := util.GenerateRandomBytes(32)
-	tx := &core.RawTransaction{Hash: txHash}
+	tx := &transaction.RawTransaction{Hash: txHash}
 
 	mempool.AddTx(tx)
 
@@ -53,10 +59,12 @@ func TestMempoolGetTx(t *testing.T) {
 }
 
 func TestMempoolClear(t *testing.T) {
-	mempool := mempool.GetMempool()
+	t.Parallel()
+
+	mempool := mempool.GetTestMempool()
 
 	for i := 0; i < 100; i++ {
-		tx := &core.RawTransaction{}
+		tx := &transaction.RawTransaction{}
 		tx.Hash = util.GenerateRandomBytes(32)
 		mempool.AddTx(tx)
 	}
@@ -68,13 +76,15 @@ func TestMempoolClear(t *testing.T) {
 }
 
 func TestMempoolGetAllTxs(t *testing.T) {
-	mempool := mempool.GetMempool()
+	t.Parallel()
+
+	mempool := mempool.GetTestMempool()
 	txHashes := make([]string, 0, 100)
 
 	for i := 0; i < 100; i++ {
 		txHash := util.GenerateRandomBytes(32)
 		txHashes = append(txHashes, string(txHash))
-		tx := &core.RawTransaction{Hash: txHash}
+		tx := &transaction.RawTransaction{Hash: txHash}
 		mempool.AddTx(tx)
 	}
 

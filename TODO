@@ -2,6 +2,7 @@
 ⌛ = not started
 ✅ = done
 ❌ = cancelled
+❗️ = important
 
 [🚧] tx and block design
 [⌛] design & decide script opcodes
@@ -15,3 +16,6 @@
 [⌛] mempool
 [⌛] synchronization
 [⌛] modular miner impl.
+[⌛] optimize serialize/deserialize
+[⌛] api impl.
+[⌛❗] adjust types, use them in appropriate places (e.g: RawTransaction -> RawTransactionModels)

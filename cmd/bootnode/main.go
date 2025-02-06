@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"context"
-	"go-lucid/core"
+	"go-lucid/core/transaction"
 	"go-lucid/node"
-	transaction "go-lucid/p2p/transaction"
+	tx_p2p "go-lucid/p2p/transaction"
 	"go-lucid/rpc/ping"
 	"go-lucid/service/health"
 	"log"
@@ -49,7 +49,7 @@ func main(c *node.FullNodeConfig) {
 	if err != nil {
 		panic(err)
 	}
-	transactionService, err := transaction.NewTransactionService(n.Host, ps)
+	transactionService, err := tx_p2p.NewTransactionService(n.Host, ps)
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +60,7 @@ func main(c *node.FullNodeConfig) {
 	go func() {
 		for range time.Tick(1 * time.Second) {
 			log.Println("broadcasting block... bootnode")
-			err := transactionService.Broadcast(context.Background(), core.RawTransaction{
+			err := transactionService.Broadcast(context.Background(), transaction.RawTransactionModel{
 				Version: 32,
 			})
 			if err != nil {
@@ -70,7 +70,7 @@ func main(c *node.FullNodeConfig) {
 	}()
 	go func() {
 		for msg := range ch {
-			tx := core.RawTransaction{}
+			tx := transaction.RawTransactionModel{}
 			err := tx.Deserialize(msg.Payload)
 			if err != nil {
 				log.Println("error deserializing block:", err)
