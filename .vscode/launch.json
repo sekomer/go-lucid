@@ -9,7 +9,9 @@
       "program": "${workspaceFolder}/main.go",
       "args": ["node", "start"],
       "env": {},
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "showLog": true
     }
   ]
 }

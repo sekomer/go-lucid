@@ -61,7 +61,7 @@ func main(c *node.FullNodeConfig) {
 	go func() {
 		for range time.Tick(1 * time.Second) {
 			log.Println("broadcasting block... devnode")
-			err := transactionService.Broadcast(context.Background(), transaction.RawTransactionModel{Version: 32})
+			err := transactionService.Broadcast(context.Background(), transaction.RawTransaction{Version: 32})
 			if err != nil {
 				log.Println("error broadcasting block:", err)
 			}
@@ -69,7 +69,7 @@ func main(c *node.FullNodeConfig) {
 	}()
 	go func() {
 		for msg := range ch {
-			tx := transaction.RawTransactionModel{}
+			tx := transaction.RawTransaction{}
 			err := tx.Deserialize(msg.Payload)
 			if err != nil {
 				log.Println("error deserializing block:", err)

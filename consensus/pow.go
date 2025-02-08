@@ -1,63 +1,52 @@
 package consensus
 
 import (
-	"bytes"
-	"crypto/sha256"
+	"context"
 	"encoding/hex"
-	"log"
-	"strings"
-	"time"
-
+	"fmt"
 	"go-lucid/core/block"
+	"go-lucid/core/transaction"
+	"go-lucid/mempool"
+	"go-lucid/miner"
+	"go-lucid/state"
 )
 
-const difficulty = 4 // Number of leading zeros required in the hash
+func SelectTransactions(mempool *mempool.Mempool, maxBlockSize int) (selected []*transaction.RawTransaction) {
+	currentSize := 0
 
-func calculateHash(block block.Block) ([]byte, error) {
-	record, err := block.Serialize()
+	for _, tx := range mempool.GetTxs() {
+		ser, _ := tx.Serialize() // txs are already verified at this point
+		txSize := len(ser)
+		if currentSize+txSize > maxBlockSize {
+			break
+		}
+		selected = append(selected, tx)
+		currentSize += txSize
+	}
+
+	return selected
+}
+
+func MineBlock(
+	transactions []transaction.RawTransaction,
+	previousBlock *block.Block,
+	ctx context.Context,
+) (*block.Block, error) {
+	state := state.GetState()
+	miner := miner.GetGlobalMiner()
+	newBlock, err := miner.Mine(transactions, previousBlock, state, ctx)
 	if err != nil {
 		return nil, err
 	}
-	h := sha256.New()
-	h.Write([]byte(record))
-	hashed := h.Sum(nil)
-	return hashed, nil
-}
 
-func MineBlock(block *block.Block) {
-	start := time.Now()
-	for {
-		block.BlockHeader.Nonce++
-		blockHash, err := calculateHash(*block)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		if strings.HasPrefix(hex.EncodeToString(blockHash), strings.Repeat("0", difficulty)) {
-			block.Hash = blockHash
-			log.Printf("Block mined: %s\n", blockHash)
-			log.Printf("Time taken: %s\n", time.Since(start))
-			break
-		}
-	}
-}
-
-func IsValidBlock(newBlock, oldBlock block.Block) bool {
-	if bytes.Compare(oldBlock.Hash, newBlock.PrevBlock) != 0 {
-		return false
-	}
-
-	blockHash, err := calculateHash(newBlock)
+	nonce := newBlock.BlockHeader.Nonce
+	blockHash, err := newBlock.GetHash()
 	if err != nil {
-		log.Println(err)
-		return false
+		return nil, err
 	}
-	if bytes.Compare(blockHash, newBlock.Hash) != 0 {
-		return false
-	}
-	if !strings.HasPrefix(hex.EncodeToString(blockHash), strings.Repeat("0", difficulty)) {
-		return false
-	}
+	fmt.Println("nonce", nonce)
+	hexhash := hex.EncodeToString(blockHash)
+	fmt.Println("blockHash", hexhash)
 
-	return true
+	return newBlock, nil
 }

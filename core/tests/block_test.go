@@ -61,7 +61,7 @@ func TestBlock(t *testing.T) {
 			},
 			TxOuts: []transaction.TxOutModel{
 				{
-					Value:         transaction.Lumen(util.RandRange(1, 1000000)),
+					Value:         core.Lumen(util.RandRange(1, 1000000)),
 					TransactionID: 0,
 					PkScript:      []byte(util.GenerateRandomBytes(core.PKS_LEN)),
 				},

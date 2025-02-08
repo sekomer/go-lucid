@@ -23,21 +23,10 @@ func (tx *RawTransaction) Deserialize(data []byte) error {
 	return dec.Decode(tx)
 }
 
+func (tx *RawTransaction) SerializeWithoutHash() ([]byte, error) {
+	tempTx := *tx
+	tempTx.Hash = nil
+	return tempTx.Serialize()
+}
+
 // * RawTransactionModel
-// todo: remove these after using RawTransaction for serialized data
-
-func (tx *RawTransactionModel) Serialize() ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(tx)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func (tx *RawTransactionModel) Deserialize(data []byte) error {
-	buf := bytes.NewBuffer(data)
-	dec := gob.NewDecoder(buf)
-	return dec.Decode(tx)
-}

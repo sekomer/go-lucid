@@ -15,11 +15,11 @@ import (
 func TestSerializeDeserialize(t *testing.T) {
 	t.Parallel()
 
-	tx := transaction.RawTransactionModel{
+	tx := transaction.RawTransaction{
 		Hash:      []byte(util.GenerateRandomBytes(core.HASH_LEN)),
 		Version:   int32(util.RandRange(1, 100)),
 		TxInCount: 1,
-		TxIns: []transaction.TxInModel{
+		TxIns: []transaction.TxIn{
 			{
 				Coinbase: bool(util.RandRange(0, 1) == 0),
 				PreviousOutput: transaction.OutPoint{
@@ -32,9 +32,9 @@ func TestSerializeDeserialize(t *testing.T) {
 			},
 		},
 		TxOutCount: 1,
-		TxOuts: []transaction.TxOutModel{
+		TxOuts: []transaction.TxOut{
 			{
-				Value:         transaction.Lumen(util.RandRange(0, 10000000000)),
+				Value:         core.Lumen(util.RandRange(0, 10000000000)),
 				PkScript:      util.GenerateRandomBytes(core.HASH_LEN),
 				TransactionID: 0,
 			},
@@ -54,7 +54,7 @@ func TestSerializeDeserialize(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deserTx := &transaction.RawTransactionModel{}
+	deserTx := &transaction.RawTransaction{}
 	err = deserTx.Deserialize(ser)
 
 	if err != nil {
@@ -104,7 +104,7 @@ func TestTransaction(t *testing.T) {
 	}
 	rawTx.TxOuts = []transaction.TxOutModel{
 		{
-			Value:         transaction.Lumen(util.RandRange(1, 1000000)),
+			Value:         core.Lumen(util.RandRange(1, 1000000)),
 			TransactionID: 0,
 			PkScript:      util.GenerateRandomBytes(core.HASH_LEN),
 		},

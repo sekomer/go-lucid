@@ -1,21 +1,26 @@
-🚧 = in progress
-⌛ = not started
-✅ = done
-❌ = cancelled
-❗️ = important
+|----------------------|
+| Symbol | Meaning     |
+|--------|-------------|
+| ⌛     | not started |
+| 🚧     | in progress |
+| ✅     | done        |
+| ❌     | cancelled   |
+| ❗️     | important   |
+|----------------------|
 
 [🚧] tx and block design
-[⌛] design & decide script opcodes
+[❌] design & decide script opcodes (only pubkeyhash for now)
 [🚧] embedded database impl.
-[⌛] decide on genesis block
+[🚧] decide on genesis block
 [⌛] signing and validating transactions
-[⌛] pow algorithm impl.
-[⌛] consensus impl.
+[🚧] pow algorithm impl.
+[🚧] consensus impl.
 [⌛] logger impl.
 [🚧] p2p and node impl.
-[⌛] mempool
+[🚧] mempool
 [⌛] synchronization
 [⌛] modular miner impl.
 [⌛] optimize serialize/deserialize
-[⌛] api impl.
-[⌛❗] adjust types, use them in appropriate places (e.g: RawTransaction -> RawTransactionModels)
+[🚧] api impl.
+[🚧❗] adjust types, use them in appropriate places (e.g: RawTransaction -> RawTransactionModels)
+[⌛] caching for block, tx, etc.

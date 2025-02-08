@@ -1,5 +1,7 @@
 package transaction
 
+import "crypto/sha256"
+
 // * RawTransaction
 
 func (tx *RawTransaction) AddTxIn(in TxIn) {
@@ -26,6 +28,15 @@ func (tx *TxOutModel) ToTxOut() TxOut {
 		Value:         tx.Value,
 		PkScript:      tx.PkScript,
 	}
+}
+
+func (tx *RawTransaction) GetHash() ([]byte, error) {
+	ser, err := tx.SerializeWithoutHash()
+	if err != nil {
+		return nil, err
+	}
+	hash := sha256.Sum256(ser)
+	return hash[:], nil
 }
 
 // * RawTransactionModel

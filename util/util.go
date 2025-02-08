@@ -37,3 +37,13 @@ func PadOrTrimTo32Bytes(input []byte) []byte {
 	copy(result, input)
 	return result
 }
+
+func TrimLeadingZeroes(input string) string {
+	// Handle case where input is all zeroes
+	for i := 0; i < len(input); i++ {
+		if input[i] != '0' {
+			return input[i:]
+		}
+	}
+	return ""
+}

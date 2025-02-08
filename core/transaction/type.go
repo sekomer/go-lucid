@@ -1,8 +1,6 @@
 package transaction
 
-type Lumen uint64
-
-const OneLumen = Lumen(1e8)
+import "go-lucid/core"
 
 type TxIn struct {
 	TransactionID   uint32
@@ -14,7 +12,7 @@ type TxIn struct {
 
 type TxOut struct {
 	TransactionID uint32
-	Value         Lumen
+	Value         core.Lumen
 	PkScript      []byte
 }
 

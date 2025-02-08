@@ -1,6 +1,8 @@
 package transaction
 
 import (
+	"go-lucid/core"
+
 	"gorm.io/gorm"
 )
 
@@ -16,7 +18,7 @@ type TxInModel struct {
 type TxOutModel struct {
 	gorm.Model
 	TransactionID uint32 // Foreign key to associate with RawTransaction
-	Value         Lumen
+	Value         core.Lumen
 	PkScript      []byte
 }
 

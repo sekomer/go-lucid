@@ -30,3 +30,27 @@ func TestRandRange(t *testing.T) {
 	assert.GreaterOrEqual(t, randNum, min)
 	assert.Less(t, randNum, max)
 }
+
+func TestTrimLeadingZeroesWithoutLeadingZeroes(t *testing.T) {
+	t.Parallel()
+
+	input := "42"
+	trimmed := util.TrimLeadingZeroes(input)
+	assert.Equal(t, trimmed, "42")
+}
+
+func TestTrimLeadingZeroesWithNonZeroes(t *testing.T) {
+	t.Parallel()
+
+	input := "00000000000000000000042"
+	trimmed := util.TrimLeadingZeroes(input)
+	assert.Equal(t, trimmed, "42")
+}
+
+func TestTrimLeadingZeroesAllZeroes(t *testing.T) {
+	t.Parallel()
+
+	input := "0000000000000000000000000000000000000000000000000000000000000000"
+	trimmed := util.TrimLeadingZeroes(input)
+	assert.Equal(t, trimmed, "")
+}

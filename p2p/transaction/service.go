@@ -21,7 +21,7 @@ func NewTransactionService(h host.Host, ps *pubsub.PubSub) (*TransactionService,
 	}, nil
 }
 
-func (s *TransactionService) Broadcast(ctx context.Context, tx transaction.RawTransactionModel) error {
+func (s *TransactionService) Broadcast(ctx context.Context, tx transaction.RawTransaction) error {
 	data, err := tx.Serialize()
 	if err != nil {
 		return err
