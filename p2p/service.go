@@ -10,6 +10,7 @@ import (
 type Message struct {
 	From    string
 	Payload []byte
+	// Signature []byte
 }
 
 type P2PService interface {

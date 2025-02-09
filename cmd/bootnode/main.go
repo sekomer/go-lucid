@@ -28,7 +28,7 @@ func main(c *node.FullNodeConfig) {
 
 	n.InitPeers()
 
-	log.Printf("Hello World, hosts ID is %s\n", n.Host.ID())
+	log.Printf("[lucid-go], hosts ID is %s\n", n.Host.ID())
 	log.Printf("connection address of this node is: %s/p2p/%s\n", n.Host.Addrs()[0], n.Host.ID())
 
 	pingService := ping.NewPingService(n.Host)
@@ -61,7 +61,7 @@ func main(c *node.FullNodeConfig) {
 		for range time.Tick(1 * time.Second) {
 			log.Println("broadcasting block... bootnode")
 			err := transactionService.Broadcast(context.Background(), transaction.RawTransaction{
-				Version: 32,
+				Version: 31,
 			})
 			if err != nil {
 				log.Println("error broadcasting block:", err)

@@ -2,14 +2,13 @@ package simple
 
 import (
 	"context"
-	"encoding/hex"
 	"time"
 
 	"go-lucid/core/block"
 	"go-lucid/core/transaction"
 	"go-lucid/miner/core"
 	"go-lucid/state"
-	"go-lucid/util"
+	"go-lucid/util/hexutil"
 
 	"github.com/holiman/uint256"
 )
@@ -40,9 +39,8 @@ func (m *SimpleMiner) Mine(transactions []transaction.RawTransaction, previousBl
 			if err != nil {
 				return nil, err
 			}
-
-			trimmed := util.TrimLeadingZeroes(hex.EncodeToString(blockHash))
-			blockHashUint256, err := uint256.FromHex("0x" + trimmed)
+			encoded := hexutil.EncodeToPrefixedHex(blockHash)
+			blockHashUint256, err := uint256.FromHex(encoded)
 			if err != nil {
 				return nil, err
 			}

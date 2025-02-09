@@ -8,6 +8,10 @@
 | ❗️     | important   |
 |----------------------|
 
+| CRITICAL STUFF |
+[❗️❗️❗] create devnode bootnode start methods for tests, do rpc and p2p tests in there, cleanup the cmd/*nodes
+
+| TODOS |
 [🚧] tx and block design
 [❌] design & decide script opcodes (only pubkeyhash for now)
 [🚧] embedded database impl.
