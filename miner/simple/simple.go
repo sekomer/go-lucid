@@ -31,9 +31,9 @@ func (m *SimpleMiner) Mine(transactions []transaction.RawTransaction, previousBl
 			TxCount: uint32(len(transactions)),
 			Txs:     transactions,
 		}
-		for {
-			target := state.GetTarget()
 
+		target := state.GetTarget()
+		for {
 			newBlock.Nonce++
 			blockHash, err := newBlock.GetHash()
 			if err != nil {
@@ -48,10 +48,6 @@ func (m *SimpleMiner) Mine(transactions []transaction.RawTransaction, previousBl
 			if target.Gt(blockHashUint256) {
 				newBlock.Hash = blockHash
 				return newBlock, nil
-			}
-
-			if time.Since(newBlock.BlockHeader.Timestamp) > time.Second*10 {
-				newBlock.BlockHeader.Timestamp = time.Unix(state.GetCurrentTimestamp(), 0)
 			}
 		}
 	}

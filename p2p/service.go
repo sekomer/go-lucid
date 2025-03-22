@@ -22,6 +22,7 @@ type P2PService interface {
 	GetSubscription() *pubsub.Subscription
 	GetChannel() string
 	Close() error
+	Name() string
 }
 
 type BaseService struct {
@@ -30,12 +31,13 @@ type BaseService struct {
 	topic   *pubsub.Topic
 	sub     *pubsub.Subscription
 	channel string
+	name    string
 }
 
 // Ensure BaseService implements P2PService interface
 var _ P2PService = (*BaseService)(nil)
 
-func NewBaseService(h host.Host, ps *pubsub.PubSub, channel string) (*BaseService, error) {
+func NewBaseService(name string, h host.Host, ps *pubsub.PubSub, channel string) (*BaseService, error) {
 	topic, err := ps.Join(channel)
 	if err != nil {
 		return nil, err
@@ -110,4 +112,9 @@ func (s *BaseService) GetSubscription() *pubsub.Subscription {
 // GetChannel returns the channel name of the BaseService
 func (s *BaseService) GetChannel() string {
 	return s.channel
+}
+
+// GetName returns the name of the BaseService
+func (s *BaseService) Name() string {
+	return s.name
 }

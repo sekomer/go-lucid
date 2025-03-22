@@ -39,7 +39,7 @@ func PadOrTrimTo32Bytes(input []byte) []byte {
 }
 
 func TrimLeadingZeroes(input string) string {
-	for i := 0; i < len(input); i++ {
+	for i := range input {
 		if input[i] != '0' {
 			return input[i:]
 		}

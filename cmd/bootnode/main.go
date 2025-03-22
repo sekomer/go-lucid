@@ -5,6 +5,7 @@ import (
 	"go-lucid/core/transaction"
 	"go-lucid/node"
 	tx_p2p "go-lucid/p2p/transaction"
+	"go-lucid/rpc/block"
 	"go-lucid/rpc/ping"
 	"go-lucid/service/health"
 	"log"
@@ -33,6 +34,12 @@ func main(c *node.FullNodeConfig) {
 
 	pingService := ping.NewPingService(n.Host)
 	err = n.Rpc.RegisterService(pingService, ping.ProtocolID)
+	if err != nil {
+		panic(err)
+	}
+
+	blockService := block.NewBlockService(n.Host)
+	err = n.Rpc.RegisterService(blockService, block.ProtocolID)
 	if err != nil {
 		panic(err)
 	}

@@ -29,7 +29,7 @@ node:
   peers:
     -
   debug:
-    enabled: true
+    enabled: false
     seed: 0
     port: 8007
     peer: ""

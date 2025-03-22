@@ -12,7 +12,7 @@ import (
 var _ p2p.P2PService = (*TransactionService)(nil)
 
 func NewTransactionService(h host.Host, ps *pubsub.PubSub) (*TransactionService, error) {
-	base, err := p2p.NewBaseService(h, ps, TransactionServiceName)
+	base, err := p2p.NewBaseService(TransactionServiceName, h, ps, TransactionServiceName)
 	if err != nil {
 		return nil, err
 	}

@@ -3,11 +3,11 @@ package transaction
 import "go-lucid/core"
 
 type TxIn struct {
-	TransactionID   uint32
-	Coinbase        bool
-	PreviousOutput  OutPoint
-	SignatureScript []byte
-	Sequence        uint32
+	TransactionID  uint32
+	Coinbase       bool
+	PreviousOutput OutPoint
+	ScriptSig      []byte
+	Sequence       uint32
 }
 
 type TxOut struct {

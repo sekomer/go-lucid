@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"go-lucid/p2p"
 	"go-lucid/rpc"
 	"log"
 	"time"
@@ -24,11 +25,15 @@ type Node struct {
 	Dht    *dht.IpfsDHT
 	Rpc    *rpc.RpcServer
 	config *FullNodeConfig
+
+	// p2p services in a map
+	Services map[string]p2p.P2PService
 }
 
 func CreateHost(priv crypto.PrivKey, c *FullNodeConfig) *Node {
 	n := &Node{}
 	n.config = c
+	n.Services = make(map[string]p2p.P2PService)
 
 	if priv == nil {
 		var err error
@@ -112,4 +117,15 @@ func (n *Node) InitPeers() {
 			panic(err)
 		}
 	}
+}
+
+func (n *Node) AddService(service p2p.P2PService) {
+	n.Services[service.Name()] = service
+}
+
+func (n *Node) GetService(name string) p2p.P2PService {
+	if service, ok := n.Services[name]; ok {
+		return service
+	}
+	return nil
 }

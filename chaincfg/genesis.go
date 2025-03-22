@@ -35,8 +35,8 @@ var GenesisBlock = block.Block{
 						Hash:  util.PadOrTrimTo32Bytes(bytes.Repeat([]byte{0x42}, core.HASH_LEN)),
 						Index: 0x42,
 					},
-					SignatureScript: util.PadOrTrimTo32Bytes(bytes.Repeat([]byte{0x42}, core.HASH_LEN)),
-					Sequence:        0x42,
+					ScriptSig: util.PadOrTrimTo32Bytes(bytes.Repeat([]byte{0x42}, core.HASH_LEN)),
+					Sequence:  0x42,
 				},
 			},
 			TxOuts: []transaction.TxOut{

@@ -29,7 +29,7 @@ func TestMineBlock(t *testing.T) {
 	previousBlock.Hash, _ = previousBlock.GetHash()
 	transactions := []transaction.RawTransaction{
 		{
-			Hash:       util.HashToBytes("a105afd81d4eca54972c6e0db6720c9b6cb1894f8d4fd9494825bb07ab1a4590"),
+			Hash:       util.HashToBytes("dd705d9200220907fa00eecad582a094330ca624c52b3b49650ada35af2394f9"),
 			BlockID:    42,
 			Version:    0,
 			TxInCount:  1,
@@ -42,8 +42,8 @@ func TestMineBlock(t *testing.T) {
 						Hash:  []byte("prev"),
 						Index: 0,
 					},
-					SignatureScript: []byte("sig"),
-					Sequence:        0,
+					ScriptSig: []byte("sig"),
+					Sequence:  0,
 				},
 			},
 			TxOuts: []transaction.TxOut{

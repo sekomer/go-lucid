@@ -7,8 +7,8 @@ import (
 
 type BlockHeader struct {
 	Version    int32
-	Height     uint32
-	PrevBlock  []byte
+	Height     uint32 `gorm:"unique;not null;index"`
+	PrevBlock  []byte `gorm:"not null"`
 	MerkleRoot []byte
 	Timestamp  time.Time
 	Bits       uint32
@@ -17,7 +17,7 @@ type BlockHeader struct {
 
 type Block struct {
 	BlockHeader
-	Hash    []byte
+	Hash    []byte `gorm:"unique;not null;index"`
 	TxCount uint32
 	Txs     []transaction.RawTransaction
 }

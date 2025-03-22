@@ -10,3 +10,5 @@ const (
 type TransactionService struct {
 	*p2p.BaseService
 }
+
+var _ p2p.P2PService = (*TransactionService)(nil)

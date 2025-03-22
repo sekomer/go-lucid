@@ -14,11 +14,11 @@ func (tx *RawTransaction) AddTxOut(out TxOut) {
 
 func (tx *TxInModel) ToTxIn() TxIn {
 	return TxIn{
-		TransactionID:   tx.TransactionID,
-		Coinbase:        tx.Coinbase,
-		PreviousOutput:  tx.PreviousOutput,
-		SignatureScript: tx.SignatureScript,
-		Sequence:        tx.Sequence,
+		TransactionID:  tx.TransactionID,
+		Coinbase:       tx.Coinbase,
+		PreviousOutput: tx.PreviousOutput,
+		ScriptSig:      tx.ScriptSig,
+		Sequence:       tx.Sequence,
 	}
 }
 

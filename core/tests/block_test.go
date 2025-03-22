@@ -54,9 +54,9 @@ func TestBlock(t *testing.T) {
 						Index: uint32(util.RandRange(1, 100)),
 						Hash:  []byte(util.GenerateRandomBytes(core.HASH_LEN)),
 					},
-					Sequence:        uint32(util.RandRange(1, 100)),
-					TransactionID:   0,
-					SignatureScript: []byte(util.GenerateRandomBytes(core.PKS_LEN)),
+					Sequence:      uint32(util.RandRange(1, 100)),
+					TransactionID: 0,
+					ScriptSig:     []byte(util.GenerateRandomBytes(core.PKS_LEN)),
 				},
 			},
 			TxOuts: []transaction.TxOutModel{
