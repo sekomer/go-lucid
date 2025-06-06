@@ -1,3 +1,4 @@
 .vscode
 TODO
 *.db
+__debug_bin*

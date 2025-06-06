@@ -3,20 +3,21 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"go-lucid/api/routes"
 	block_core "go-lucid/core/block"
 	"go-lucid/core/transaction"
+	"go-lucid/database"
 	"go-lucid/node"
 	tx_p2p "go-lucid/p2p/transaction"
 	"go-lucid/rpc/block"
 	"go-lucid/rpc/ping"
 	"go-lucid/service/health"
 	"log"
+	"net/http"
 	"time"
 
 	gorpc "github.com/libp2p/go-libp2p-gorpc"
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
-	peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
@@ -27,7 +28,9 @@ func StartRpcClient(client host.Host) *gorpc.Client {
 }
 
 func main(c *node.FullNodeConfig) {
-	log.Println("dev node starting...")
+	log.Println("devnode starting...")
+
+	database.InitDB("/tmp/devnode.db")
 
 	n := node.CreateHost(nil, c)
 	n.InitPeers()
@@ -47,45 +50,38 @@ func main(c *node.FullNodeConfig) {
 	if err != nil {
 		panic(err)
 	}
+
 	go func() {
-		for range time.Tick(3 * time.Second) {
-			// get a random peer thats not the same as the current node
-			peers := n.Host.Network().Peers()
-			var randomPeer peer.ID
-			for _, peer := range peers {
-				if peer != n.Host.ID() {
-					randomPeer = peer
-					break
-				}
-			}
-			if randomPeer == "" {
-				log.Println("no peers found")
-				continue
-			}
+		for {
+			time.Sleep(3 * time.Second)
 
 			blockClient := block.NewBlockClient(n.Host)
-			blockRpcArgs := block.GetBlockRpcArgs{
+			blockRpcArgs := block.BlockRpcArgs{
 				Method: "GetBlock",
-				Args:   []interface{}{5, 10},
+				Args:   []any{1},
 			}
-			blockRpcReply := block.GetBlockRpcReply{}
-			err := blockClient.Call(context.Background(), randomPeer, "GetBlock", &blockRpcArgs, &blockRpcReply)
+			reply := block.BlockRpcReply{}
+			err := blockClient.Call(context.Background(), n.Host.Network().Peers()[0], "GetBlock", &blockRpcArgs, &reply)
 			if err != nil {
 				log.Println("error calling get block rpc:", err)
-				continue
+				return
 			}
-			log.Printf("[ >>>>>>>>>> GET BLOCK RPC CALL RESULT]")
 
-			// 2025/03/04 00:57:03 main.go:77: get block result: map[Bits:0 Hash:<nil> Height:123456789 MerkleRoot:<nil> Nonce:99999999 PrevBlock:[112 114 101 118 32 98 108 111 99 107] Timestamp:<nil> TxCount:0 Txs:<nil> Version:1]
-			// how to get block type from this result?
+			log.Println("xo dev called the peer:", n.Host.Network().Peers()[0])
+			if !reply.Success {
+				log.Println("xo dev success:", reply.Success)
+				log.Println("xo dev error:", reply.Error)
+				log.Println("xo dev result:", reply.Result)
+			}
+
 			block := block_core.Block{}
-			err = json.Unmarshal(blockRpcReply.Result, &block)
+			err = json.Unmarshal(reply.Result, &block)
 			if err != nil {
 				log.Println("error unmarshalling block:", err)
-				continue
+				return
 			}
-			log.Printf("get block result: %v", block)
-			log.Printf("get block result nonce: %v", block.Nonce)
+
+			log.Println("init test: devnode block:", block)
 		}
 	}()
 
@@ -97,11 +93,7 @@ func main(c *node.FullNodeConfig) {
 		}
 	}()
 
-	ps, err := pubsub.NewGossipSub(context.Background(), n.Host)
-	if err != nil {
-		panic(err)
-	}
-	transactionService, err := tx_p2p.NewTransactionService(n.Host, ps)
+	transactionService, err := tx_p2p.NewTransactionService(n.Host, n.PubSub)
 	if err != nil {
 		panic(err)
 	}
@@ -113,15 +105,23 @@ func main(c *node.FullNodeConfig) {
 	if err != nil {
 		panic(err)
 	}
+
 	go func() {
+		block_number := uint32(0)
 		for range time.Tick(3 * time.Second) {
-			log.Println("broadcasting block... devnode")
-			err := yeniTxService.Broadcast(context.Background(), transaction.RawTransaction{Version: 32})
+			err := yeniTxService.Broadcast(context.Background(), transaction.RawTransaction{
+				Version:   32,
+				BlockID:   block_number,
+				Hash:      []byte("devnode hash"),
+				TxInCount: 333333,
+			})
 			if err != nil {
 				log.Println("error broadcasting block:", err)
 			}
+			block_number++
 		}
 	}()
+
 	go func() {
 		for msg := range ch {
 			tx := transaction.RawTransaction{}
@@ -130,7 +130,32 @@ func main(c *node.FullNodeConfig) {
 				log.Println("error deserializing block:", err)
 				continue
 			}
-			log.Printf("from: %s, block: %+v\n", msg.From, tx)
+		}
+	}()
+
+	mux := http.NewServeMux()
+	routes.RegisterTransactionRoutes(mux, transactionService)
+	go func() {
+		err := http.ListenAndServe(":8080", mux)
+		if err != nil {
+			log.Println("error starting http server:", err)
+		}
+	}()
+
+	// go func() {
+	// 	for range time.Tick(3 * time.Second) {
+	// 		log.Println("mempool size:", mempool.GetMempool().Size())
+	// 		for _, tx := range mempool.GetMempool().GetTxs() {
+	// 			log.Printf("tx: %+v", tx)
+	// 		}
+	// 		log.Println("--------------------------------")
+	// 	}
+	// }()
+
+	go func() {
+		for range time.Tick(10 * time.Second) {
+			peers := n.Host.Network().Peers()
+			log.Println("devnode pubsub peers:", peers)
 		}
 	}()
 

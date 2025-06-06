@@ -9,15 +9,20 @@ const (
 	Version     = "1.0.0"
 	ServiceName = "BlockService"
 	ProtocolID  = protocol.ID("p2p/rpc/block")
+
+	MethodBlock       = "GetBlock"
+	MethodBlockHeader = "GetBlockHeader"
 )
 
 // PingArgs type
-type GetBlockRpcArgs struct {
+type BlockRpcArgs struct {
 	Method string
 	Args   []any
 }
 
 // PingReply type
-type GetBlockRpcReply struct {
-	Result []byte
+type BlockRpcReply struct {
+	Success bool
+	Error   string
+	Result  []byte
 }

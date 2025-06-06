@@ -21,7 +21,7 @@ func NewRpcServer(host host.Host, logger *log.Logger) *RpcServer {
 	}
 }
 
-func (s *RpcServer) RegisterService(service interface{}, protocolID protocol.ID) error {
+func (s *RpcServer) RegisterService(service any, protocolID protocol.ID) error {
 	rpcHost := gorpc.NewServer(s.host, protocolID)
 	err := rpcHost.Register(service)
 	if err != nil {

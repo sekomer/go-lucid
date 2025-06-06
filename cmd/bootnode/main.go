@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
+	block_core "go-lucid/core/block"
 	"go-lucid/core/transaction"
+	"go-lucid/database"
 	"go-lucid/node"
 	tx_p2p "go-lucid/p2p/transaction"
 	"go-lucid/rpc/block"
@@ -11,13 +14,14 @@ import (
 	"log"
 	"time"
 
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"golang.org/x/exp/rand"
 )
 
 func main(c *node.FullNodeConfig) {
 	log.Println("bootnode starting...")
+
+	database.InitDB("/tmp/bootnode.db")
 
 	priv, _, err := crypto.GenerateEd25519Key(rand.New(rand.NewSource(c.Node.Debug.Seed)))
 	if err != nil {
@@ -52,11 +56,7 @@ func main(c *node.FullNodeConfig) {
 		}
 	}()
 
-	ps, err := pubsub.NewGossipSub(context.Background(), n.Host)
-	if err != nil {
-		panic(err)
-	}
-	transactionService, err := tx_p2p.NewTransactionService(n.Host, ps)
+	transactionService, err := tx_p2p.NewTransactionService(n.Host, n.PubSub)
 	if err != nil {
 		panic(err)
 	}
@@ -65,14 +65,18 @@ func main(c *node.FullNodeConfig) {
 		panic(err)
 	}
 	go func() {
-		for range time.Tick(1 * time.Second) {
-			log.Println("broadcasting block... bootnode")
+		block_number := uint32(0)
+		for range time.Tick(3 * time.Second) {
 			err := transactionService.Broadcast(context.Background(), transaction.RawTransaction{
-				Version: 31,
+				Version:   31,
+				BlockID:   block_number,
+				Hash:      []byte("bootnode hash"),
+				TxInCount: 9999999,
 			})
 			if err != nil {
 				log.Println("error broadcasting block:", err)
 			}
+			block_number++
 		}
 	}()
 	go func() {
@@ -83,7 +87,47 @@ func main(c *node.FullNodeConfig) {
 				log.Println("error deserializing block:", err)
 				continue
 			}
-			log.Printf("from: %s, block: %+v\n", msg.From, tx)
+		}
+	}()
+
+	go func() {
+		for range time.Tick(10 * time.Second) {
+			peers := n.Host.Network().Peers()
+			log.Println("bootnode pubsub peers:", peers)
+		}
+	}()
+
+	go func() {
+		for {
+			time.Sleep(3 * time.Second)
+			blockClient := block.NewBlockClient(n.Host)
+
+			blockRpcArgs := block.BlockRpcArgs{
+				Method: "GetBlock",
+				Args:   []any{1},
+			}
+			reply := block.BlockRpcReply{}
+
+			if len(n.Host.Network().Peers()) == 0 {
+				log.Println("no peers found")
+				continue
+			}
+
+			err := blockClient.Call(context.Background(), n.Host.Network().Peers()[0], "GetBlock", &blockRpcArgs, &reply)
+			if err != nil {
+				log.Println("error calling get block rpc:", err)
+				continue
+			}
+
+			if !reply.Success {
+				log.Println("xo boot success:", reply.Success)
+				log.Println("xo boot error:", reply.Error)
+				log.Println("xo boot result:", reply.Result)
+			}
+
+			block := block_core.Block{}
+			json.Unmarshal(reply.Result, &block)
+			log.Println("init test: bootnode block:", block)
 		}
 	}()
 

@@ -171,7 +171,7 @@ func (l *Logger) AddOutput(w io.Writer) {
 }
 
 // log logs a message with the specified level
-func (l *Logger) log(level Level, format string, args ...interface{}) {
+func (l *Logger) log(level Level, format string, args ...any) {
 	if level < l.level {
 		return
 	}
@@ -221,27 +221,27 @@ func (l *Logger) log(level Level, format string, args ...interface{}) {
 }
 
 // Debug logs a debug message
-func (l *Logger) Debug(format string, args ...interface{}) {
+func (l *Logger) Debug(format string, args ...any) {
 	l.log(DEBUG, format, args...)
 }
 
 // Info logs an info message
-func (l *Logger) Info(format string, args ...interface{}) {
+func (l *Logger) Info(format string, args ...any) {
 	l.log(INFO, format, args...)
 }
 
 // Warn logs a warning message
-func (l *Logger) Warn(format string, args ...interface{}) {
+func (l *Logger) Warn(format string, args ...any) {
 	l.log(WARN, format, args...)
 }
 
 // Error logs an error message
-func (l *Logger) Error(format string, args ...interface{}) {
+func (l *Logger) Error(format string, args ...any) {
 	l.log(ERROR, format, args...)
 }
 
 // Fatal logs a fatal message and exits the program
-func (l *Logger) Fatal(format string, args ...interface{}) {
+func (l *Logger) Fatal(format string, args ...any) {
 	l.log(FATAL, format, args...)
 }
 

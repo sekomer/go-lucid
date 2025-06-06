@@ -8,6 +8,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	fullNodeConfig *node.FullNodeConfig
+)
+
 func MustReadConfig(path string) *node.FullNodeConfig {
 	var c *node.FullNodeConfig
 	var buf []byte
@@ -31,5 +35,15 @@ func MustReadConfig(path string) *node.FullNodeConfig {
 		panic(err)
 	}
 
+	fullNodeConfig = c
+
 	return c
+}
+
+func MustGetFullNodeConfig() *node.FullNodeConfig {
+	if fullNodeConfig == nil {
+		panic("global config is nil")
+	}
+
+	return fullNodeConfig
 }

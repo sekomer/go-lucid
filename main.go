@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	bootnode "go-lucid/cmd/bootnode"
 	devnode "go-lucid/cmd/devnode"
 	fullnode "go-lucid/cmd/fullnode"
-	"go-lucid/node"
-	"io"
+	"go-lucid/config"
 	"log"
 	"os"
 	"sort"
@@ -14,7 +12,6 @@ import (
 
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/rand"
-	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -89,24 +86,7 @@ func main() {
 							},
 						},
 						Action: func(*cli.Context) error {
-							log.Println("yamlFile:", yamlFile)
-
-							yamlReader, err := os.Open(yamlFile)
-							if err != nil {
-								return err
-							}
-							defer yamlReader.Close()
-
-							buf, err := io.ReadAll(yamlReader)
-							if err != nil {
-								return err
-							}
-
-							c := &node.FullNodeConfig{}
-							err = yaml.Unmarshal(buf, c)
-							if err != nil {
-								return fmt.Errorf("in file %q: %w", yamlFile, err)
-							}
+							c := config.MustReadConfig(yamlFile)
 
 							if boot {
 								bootnode.Start(c)

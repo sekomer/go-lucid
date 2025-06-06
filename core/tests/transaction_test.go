@@ -2,6 +2,7 @@ package core_test
 
 import (
 	"encoding/json"
+	"go-lucid/config"
 	"go-lucid/core"
 	"go-lucid/core/transaction"
 	"go-lucid/database"
@@ -14,6 +15,8 @@ import (
 
 func TestSerializeDeserialize(t *testing.T) {
 	t.Parallel()
+
+	config.MustReadConfig("../../config/fullnode.yaml")
 
 	tx := transaction.RawTransaction{
 		Hash:      []byte(util.GenerateRandomBytes(core.HASH_LEN)),
@@ -73,17 +76,12 @@ func TestSerializeDeserialize(t *testing.T) {
 func TestTransaction(t *testing.T) {
 	t.Parallel()
 
-	t.Log("db test starting...")
+	config.MustReadConfig("../../config/fullnode.yaml")
 
 	db := database.GetTestDB()
 	if db == nil {
 		t.Fatal("db is nil")
 	}
-	db.AutoMigrate(
-		&transaction.RawTransactionModel{},
-		&transaction.TxInModel{},
-		&transaction.TxOutModel{},
-	)
 
 	rawTx := &transaction.RawTransactionModel{}
 	rawTx.Hash = []byte(util.GenerateRandomBytes(core.HASH_LEN))

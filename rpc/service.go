@@ -6,7 +6,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/protocol"
 )
 
-type RpcService interface{}
+type RpcService any
 
 type BaseService struct {
 	Name       string

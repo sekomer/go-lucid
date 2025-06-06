@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"go-lucid/config"
 	"go-lucid/core"
 	"go-lucid/core/block"
 	"go-lucid/core/transaction"
@@ -18,16 +19,12 @@ func TestBlockChain(t *testing.T) {
 
 	t.Log("db test starting...")
 
+	config.MustReadConfig("../../config/devnode.yaml")
+
 	db := database.GetTestDB()
 	if db == nil {
 		t.Fatal("db is nil")
 	}
-	db.AutoMigrate(
-		&transaction.RawTransactionModel{},
-		&transaction.TxInModel{},
-		&transaction.TxOutModel{},
-		&block.BlockModel{},
-	)
 
 	for i := range 100 {
 		rawBlock := &block.BlockModel{}

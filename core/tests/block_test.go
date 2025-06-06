@@ -21,12 +21,6 @@ func TestBlock(t *testing.T) {
 	if db == nil {
 		t.Fatal("db is nil")
 	}
-	db.AutoMigrate(
-		&transaction.RawTransactionModel{},
-		&transaction.TxInModel{},
-		&transaction.TxOutModel{},
-		&block.BlockModel{},
-	)
 
 	rawBlock := &block.BlockModel{}
 	rawBlock.ID = uint(util.RandRange(1, 100))

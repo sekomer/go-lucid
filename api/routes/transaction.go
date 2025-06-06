@@ -1,11 +1,14 @@
 package routes
 
 import (
-	"go-lucid/api/handlers"
 	"net/http"
+
+	"go-lucid/api/handlers"
+	tx_p2p "go-lucid/p2p/transaction"
 )
 
-func RegisterTransactionRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/transaction", handlers.GetTransaction)
-	mux.HandleFunc("/broadcast", handlers.BroadcastTransaction)
+func RegisterTransactionRoutes(mux *http.ServeMux, transactionService *tx_p2p.TransactionService) {
+	handler := handlers.NewTransactionHandler(transactionService)
+	mux.HandleFunc("/transaction", handler.GetTransaction)
+	mux.HandleFunc("/broadcast", handler.BroadcastTransaction)
 }

@@ -20,7 +20,8 @@ pids+=($!)
 
 sleep 1
 
-for i in {1..$DEV_CLUSTER_SIZE}; do
+for i in $(seq 1 $DEV_CLUSTER_SIZE); do
+    echo "starting dev node $i"
     go run main.go --config config/devnode.yaml node start --dev &
     pids+=($!)
 done

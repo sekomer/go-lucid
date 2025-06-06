@@ -24,7 +24,7 @@ func NewBlockClient(host host.Host) *BlockClient {
 }
 
 // Block rpc call to peer
-func (c *BlockClient) Call(ctx context.Context, peer peer.ID, method string, args *GetBlockRpcArgs, reply *GetBlockRpcReply) error {
+func (c *BlockClient) Call(ctx context.Context, peer peer.ID, method string, args *BlockRpcArgs, reply *BlockRpcReply) error {
 	return c.client.Client.Call(
 		peer,
 		c.client.Name,

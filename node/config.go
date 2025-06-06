@@ -24,7 +24,8 @@ type P2pConfig struct {
 }
 
 type DataConfig struct {
-	Dir string `yaml:"dir"`
+	Dir         string `yaml:"dir"`
+	AutoMigrate bool   `yaml:"auto_migrate"`
 }
 
 type LoggingConfig struct {

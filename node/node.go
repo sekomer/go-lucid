@@ -10,6 +10,7 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -25,6 +26,7 @@ type Node struct {
 	Dht    *dht.IpfsDHT
 	Rpc    *rpc.RpcServer
 	config *FullNodeConfig
+	PubSub *pubsub.PubSub
 
 	// p2p services in a map
 	Services map[string]p2p.P2PService
@@ -93,6 +95,13 @@ func CreateHost(priv crypto.PrivKey, c *FullNodeConfig) *Node {
 
 	n.Host = h2
 	n.Rpc = rpc.NewRpcServer(h2, log.Default())
+
+	ps, err := pubsub.NewGossipSub(context.Background(), h2)
+	if err != nil {
+		panic(err)
+	}
+	n.PubSub = ps
+
 	return n
 }
 

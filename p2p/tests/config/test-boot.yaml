@@ -16,6 +16,7 @@ node:
     discovery: true
   data:
     dir: "database/blockchain"
+    auto_migrate: true
   logging:
     level: "info" # debug, info, warn, error
     file: "log/blockchain/node.log"

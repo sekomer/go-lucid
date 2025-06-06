@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"log"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -69,11 +70,14 @@ func (s *BaseService) Subscribe(ctx context.Context) (<-chan Message, error) {
 		for {
 			msg, err := s.sub.Next(ctx)
 			if err != nil {
+				log.Println("s.sub.Next error:", err)
 				return
 			}
-			if msg.ReceivedFrom == s.host.ID() {
+
+			if msg.GetFrom() == s.host.ID() {
 				continue
 			}
+
 			ch <- Message{
 				From:    msg.ReceivedFrom.String(),
 				Payload: msg.Data,
